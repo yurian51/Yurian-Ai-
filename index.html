@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yurian AI</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Share Tech Mono', monospace;
+        background-color: #020202;
+        color: #ff0000;
+        overflow: hidden; /* Prevent body scroll, handle in app */
+      }
+      .scanline {
+        background: linear-gradient(
+          to bottom,
+          rgba(255,255,255,0),
+          rgba(255,255,255,0) 50%,
+          rgba(0,0,0,0.2) 50%,
+          rgba(0,0,0,0.2)
+        );
+        background-size: 100% 4px;
+        position: fixed;
+        pointer-events: none;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 50;
+      }
+      .vignette {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        box-shadow: 0 0 150px rgba(0,0,0,0.9) inset;
+        pointer-events: none;
+        z-index: 40;
+      }
+      .flicker {
+        animation: flicker 0.15s infinite;
+      }
+      @keyframes flicker {
+        0% { opacity: 0.9; }
+        50% { opacity: 1.0; }
+        100% { opacity: 0.9; }
+      }
+      .hologram-glow {
+        box-shadow: 0 0 15px rgba(255, 0, 0, 0.5), inset 0 0 10px rgba(255, 0, 0, 0.2);
+      }
+      
+      /* Audio Waveform Animations */
+      @keyframes wave {
+        0% { height: 10%; }
+        50% { height: 100%; }
+        100% { height: 10%; }
+      }
+      .animate-wave {
+        animation: wave 1s ease-in-out infinite;
+      }
+      
+      /* Glitch Animations */
+      @keyframes glitch-skew {
+        0% { transform: skew(0deg); }
+        20% { transform: skew(-2deg); }
+        40% { transform: skew(2deg); }
+        60% { transform: skew(0deg); }
+        80% { transform: skew(-1deg); }
+        100% { transform: skew(0deg); }
+      }
+      @keyframes glitch-anim {
+        0% { clip-path: inset(40% 0 61% 0); transform: translate(-2px, 2px); }
+        20% { clip-path: inset(92% 0 1% 0); transform: translate(1px, -1px); }
+        40% { clip-path: inset(43% 0 1% 0); transform: translate(-1px, 2px); }
+        60% { clip-path: inset(25% 0 58% 0); transform: translate(2px, 1px); }
+        80% { clip-path: inset(54% 0 7% 0); transform: translate(-2px, -2px); }
+        100% { clip-path: inset(58% 0 43% 0); transform: translate(2px, 2px); }
+      }
+      .glitch-effect {
+        animation: glitch-anim 2s infinite linear alternate-reverse;
+      }
+      .glitch-text {
+        position: relative;
+      }
+      .glitch-text::before,
+      .glitch-text::after {
+        content: attr(data-text);
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .glitch-text::before {
+        left: 2px;
+        text-shadow: -1px 0 red;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+      }
+      .glitch-text::after {
+        left: -2px;
+        text-shadow: -1px 0 blue;
+        clip: rect(44px, 450px, 56px, 0);
+        animation: glitch-anim 5s infinite linear alternate-reverse;
+      }
+      
+      /* New Animations for Camera Static */
+      @keyframes noise {
+        0%, 100% { background-position: 0 0; }
+        10% { background-position: -5% -10%; }
+        20% { background-position: -15% 5%; }
+        30% { background-position: 7% -25%; }
+        40% { background-position: 20% 25%; }
+        50% { background-position: -25% 10%; }
+        60% { background-position: 15% 5%; }
+        70% { background-position: 0% 15%; }
+        80% { background-position: 25% 35%; }
+        90% { background-position: -10% 10%; }
+      }
+      .animate-noise {
+        animation: noise 0.2s steps(10) infinite;
+      }
+
+      /* Sporadic Glitch for High Security */
+      @keyframes sporadic-glitch-anim {
+        0% { opacity: 0; transform: translate(0); clip-path: inset(0 0 0 0); }
+        94% { opacity: 0; transform: translate(0); clip-path: inset(0 0 0 0); }
+        95% { opacity: 0.8; transform: translate(5px, 2px); clip-path: inset(20% 0 50% 0); }
+        96% { opacity: 1; transform: translate(-5px, -2px); clip-path: inset(40% 0 20% 0); }
+        97% { opacity: 1; transform: translate(2px, 5px); clip-path: inset(10% 0 60% 0); }
+        98% { opacity: 0; transform: translate(0); clip-path: inset(0 0 0 0); }
+        100% { opacity: 0; transform: translate(0); clip-path: inset(0 0 0 0); }
+      }
+      
+      /* Scrolling Data Stream Animation */
+      @keyframes slideUp {
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-50%); }
+      }
+      
+      /* Custom scrollbar */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+      ::-webkit-scrollbar-track {
+        background: #0a0000; 
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #111; 
+        border-radius: 3px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #333; 
+      }
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.30.0"
+  }
+}
+</script>
+</head>
+  <body>
+    <div id="root"></div>
+    <div class="scanline"></div>
+    <div class="vignette"></div>
+  </body>
+</html>

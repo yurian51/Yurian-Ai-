@@ -1,0 +1,8 @@
+{
+  "name": "Yurian ",
+  "description": "A Resident Evil inspired smart home AI assistant using Gemini Live API for real-time voice control and system management.",
+  "requestFramePermissions": [
+    "microphone",
+    "geolocation"
+  ]
+}
