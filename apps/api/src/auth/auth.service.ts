@@ -1,5 +1,6 @@
 import { ConflictException, Injectable, UnauthorizedException } from '@nestjs/common';
-import { randomBytes, scrypt as nodeScrypt, timingSafeEqual } from 'node:crypto';
+import { JwtService } from '@nestjs/jwt';
+import { createHash, randomBytes, scrypt as nodeScrypt, timingSafeEqual } from 'node:crypto';
 import { promisify } from 'node:util';
 import { prisma } from '@yurian/database';
 import type { TokenPair } from './auth.types';
@@ -7,6 +8,7 @@ import type { LoginDto } from './dto/login.dto';
 import type { RegisterDto } from './dto/register.dto';
 
 const scrypt = promisify(nodeScrypt);
+const REFRESH_DAYS = 30;
 
 async function hashPassword(password: string): Promise<string> {
   const salt = randomBytes(16).toString('hex');
@@ -22,8 +24,14 @@ async function verifyPassword(password: string, stored: string): Promise<boolean
   return expected.length === derived.length && timingSafeEqual(expected, derived);
 }
 
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
 @Injectable()
 export class AuthService {
+  constructor(private readonly jwt: JwtService) {}
+
   async register(dto: RegisterDto): Promise<TokenPair> {
     const email = dto.email.trim().toLowerCase();
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -32,7 +40,6 @@ export class AuthService {
     const user = await prisma.user.create({
       data: { email, name: dto.name.trim(), passwordHash: await hashPassword(dto.password) },
     });
-
     return this.issueSession(user.id);
   }
 
@@ -45,12 +52,15 @@ export class AuthService {
   }
 
   private async issueSession(userId: string): Promise<TokenPair> {
-    // Token issuance is intentionally isolated. JWT signing/rotation will be wired here
-    // with server-only secrets and persistent refresh-token records.
-    return {
-      accessToken: `pending:${userId}`,
-      refreshToken: `pending:${randomBytes(32).toString('hex')}`,
-      expiresIn: 900,
-    };
+    const sessionId = randomBytes(24).toString('hex');
+    const refreshToken = randomBytes(48).toString('base64url');
+    const expiresAt = new Date(Date.now() + REFRESH_DAYS * 86400000);
+
+    await prisma.session.create({
+      data: { id: sessionId, userId, refreshTokenHash: hashToken(refreshToken), expiresAt },
+    });
+
+    const accessToken = await this.jwt.signAsync({ sub: userId, sid: sessionId });
+    return { accessToken, refreshToken, expiresIn: 900 };
   }
 }
