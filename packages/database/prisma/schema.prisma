@@ -15,15 +15,29 @@ enum ApprovalStatus { PENDING APPROVED REJECTED EXPIRED CANCELLED }
 enum AgentRunStatus { PENDING RUNNING WAITING_APPROVAL COMPLETED FAILED CANCELLED }
 
 model User {
-  id           String       @id @default(cuid())
-  email        String       @unique
-  passwordHash String?
-  name         String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  memberships  Membership[]
+  id            String       @id @default(cuid())
+  email         String       @unique
+  passwordHash  String?
+  name          String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  memberships   Membership[]
   conversations Conversation[]
-  memories     Memory[]
+  memories      Memory[]
+  sessions      Session[]
+}
+
+model Session {
+  id               String   @id @default(cuid())
+  userId           String
+  refreshTokenHash  String   @unique
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime @default(now())
+  lastUsedAt       DateTime?
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 model Organization {
@@ -152,38 +166,38 @@ model DocumentChunk {
 }
 
 model Agent {
-  id           String       @id @default(cuid())
-  workspaceId  String
-  name         String
-  description  String?
-  instructions String
-  model        String
-  tools        Json         @default("[]")
-  permissions  Json         @default("[]")
-  memoryConfig Json         @default("{}")
-  approvalPolicy Json        @default("{}")
-  limits       Json         @default("{}")
-  status       String       @default("ACTIVE")
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  workspace    Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
-  runs         AgentRun[]
+  id             String       @id @default(cuid())
+  workspaceId    String
+  name           String
+  description    String?
+  instructions   String
+  model          String
+  tools          Json         @default("[]")
+  permissions    Json         @default("[]")
+  memoryConfig   Json         @default("{}")
+  approvalPolicy Json         @default("{}")
+  limits         Json         @default("{}")
+  status         String       @default("ACTIVE")
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  workspace      Workspace    @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  runs           AgentRun[]
   @@index([workspaceId, status])
 }
 
 model AgentRun {
-  id          String        @id @default(cuid())
+  id          String         @id @default(cuid())
   agentId     String
   workspaceId String
   status      AgentRunStatus @default(PENDING)
   input       Json
   output      Json?
-  traceId     String        @unique
+  traceId     String         @unique
   error       String?
   startedAt   DateTime?
   finishedAt  DateTime?
-  createdAt   DateTime      @default(now())
-  agent       Agent         @relation(fields: [agentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime       @default(now())
+  agent       Agent          @relation(fields: [agentId], references: [id], onDelete: Cascade)
   @@index([workspaceId, createdAt])
 }
 
@@ -199,20 +213,20 @@ model Tool {
 }
 
 model Approval {
-  id             String         @id @default(cuid())
-  workspaceId    String
-  agentId        String?
-  userId         String
+  id              String         @id @default(cuid())
+  workspaceId     String
+  agentId         String?
+  userId          String
   requestedAction String
-  riskLevel      ToolRiskLevel
-  payload        Json
-  explanation    String
-  status         ApprovalStatus @default(PENDING)
-  expiresAt      DateTime?
-  approvedBy     String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  workspace      Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  riskLevel       ToolRiskLevel
+  payload         Json
+  explanation     String
+  status          ApprovalStatus @default(PENDING)
+  expiresAt       DateTime?
+  approvedBy      String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  workspace       Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   @@index([workspaceId, status, createdAt])
 }
 
