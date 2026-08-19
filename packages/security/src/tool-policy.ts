@@ -10,6 +10,6 @@ export interface ToolPolicyInput {
 export function canExecuteTool(input: ToolPolicyInput): boolean {
   if (!input.allowed) return false;
   if (input.riskLevel === 'LOW') return true;
-  if (input.requiresApproval) return input.userApproved;
-  return input.riskLevel === 'MEDIUM';
+  if (input.riskLevel === 'MEDIUM') return !input.requiresApproval || input.userApproved;
+  return input.userApproved;
 }
