@@ -8,8 +8,8 @@ export class AiService {
 
   constructor(config: ConfigService) {
     this.claude = new ClaudeProvider({
-      apiKey: config.getOrThrow<string>('ANTHROPIC_API_KEY'),
-      defaultModel: config.get<string>('ANTHROPIC_MODEL') ?? 'claude-sonnet-4-20250514',
+      apiKey: config.getOrThrow<string>('CLAUDE_API_KEY'),
+      defaultModel: config.get<string>('CLAUDE_MODEL') || 'claude-sonnet-4-20250514',
     });
   }
 
