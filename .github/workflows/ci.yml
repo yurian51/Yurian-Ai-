@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: yurian
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: yurian_ai_os
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U yurian -d yurian_ai_os"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=5
+    env:
+      DATABASE_URL: postgresql://yurian:postgres@localhost:5432/yurian_ai_os
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-change-me
+      JWT_REFRESH_SECRET: ci-refresh-secret-change-me
+      CLAUDE_API_KEY: ci-placeholder-key
+      CLAUDE_MODEL: claude-sonnet-4-20250514
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm --filter @yurian/database generate
+      - run: pnpm --filter @yurian/database validate
+      - run: pnpm --filter @yurian/api build
+      - run: pnpm --filter @yurian/web build
