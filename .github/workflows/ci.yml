@@ -9,9 +9,15 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
     services:
       postgres:
         image: pgvector/pgvector:pg16
@@ -22,35 +28,72 @@ jobs:
         ports: ['5432:5432']
         options: >-
           --health-cmd="pg_isready -U yurian -d yurian_ai_os"
-          --health-interval=10s
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=12
       redis:
         image: redis:7-alpine
         ports: ['6379:6379']
         options: >-
           --health-cmd="redis-cli ping"
-          --health-interval=10s
+          --health-interval=5s
           --health-timeout=5s
-          --health-retries=5
+          --health-retries=12
+
     env:
       DATABASE_URL: postgresql://yurian:postgres@localhost:5432/yurian_ai_os
       REDIS_URL: redis://localhost:6379
-      JWT_ACCESS_SECRET: ci-access-secret-change-me
-      JWT_REFRESH_SECRET: ci-refresh-secret-change-me
+      JWT_ACCESS_SECRET: ci-access-secret
+      JWT_REFRESH_SECRET: ci-refresh-secret
       CLAUDE_API_KEY: ci-placeholder-key
       CLAUDE_MODEL: claude-sonnet-4-20250514
+      NODE_ENV: test
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
         with:
           version: 10
-      - uses: actions/setup-node@v4
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --no-frozen-lockfile
-      - run: pnpm --filter @yurian/database generate
-      - run: pnpm --filter @yurian/database validate
-      - run: pnpm --filter @yurian/api build
-      - run: pnpm --filter @yurian/web build
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @yurian/database generate
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @yurian/database validate
+
+      - name: Check database connectivity
+        run: |
+          pnpm --filter @yurian/database exec prisma db execute --stdin <<'SQL'
+          SELECT 1;
+          SQL
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Build API
+        run: pnpm --filter @yurian/api build
+
+      - name: Build Web
+        run: pnpm --filter @yurian/web build
+
+      - name: Unit tests
+        run: pnpm test --if-present
+
+      - name: Integration tests
+        run: pnpm test:integration --if-present
