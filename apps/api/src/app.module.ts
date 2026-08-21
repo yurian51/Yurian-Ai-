@@ -5,9 +5,19 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthModule } from './auth/auth.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { HealthModule } from './health/health.module';
+import { ProjectsModule } from './projects/projects.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({ isGlobal: true, cache: true }), AiModule, AuthModule, WorkspacesModule, ConversationsModule, ApprovalsModule, HealthModule],
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true, cache: true }),
+    AiModule,
+    AuthModule,
+    WorkspacesModule,
+    ProjectsModule,
+    ConversationsModule,
+    ApprovalsModule,
+    HealthModule,
+  ],
 })
 export class AppModule {}
