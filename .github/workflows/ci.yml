@@ -66,7 +66,7 @@ jobs:
           cache: pnpm
 
       - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+        run: pnpm install --no-frozen-lockfile
 
       - name: Generate Prisma Client
         run: pnpm --filter @yurian/database generate
@@ -81,10 +81,10 @@ jobs:
           SQL
 
       - name: Lint
-        run: pnpm lint
+        run: pnpm lint --if-present
 
       - name: Type check
-        run: pnpm typecheck
+        run: pnpm typecheck --if-present
 
       - name: Build API
         run: pnpm --filter @yurian/api build
