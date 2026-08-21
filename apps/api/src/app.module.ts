@@ -5,6 +5,7 @@ import { ApprovalsModule } from './approvals/approvals.module';
 import { AuthModule } from './auth/auth.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { HealthModule } from './health/health.module';
+import { MemoryModule } from './memory/memory.module';
 import { ProjectsModule } from './projects/projects.module';
 import { TasksModule } from './tasks/tasks.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
@@ -17,6 +18,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     WorkspacesModule,
     ProjectsModule,
     TasksModule,
+    MemoryModule,
     ConversationsModule,
     ApprovalsModule,
     HealthModule,
