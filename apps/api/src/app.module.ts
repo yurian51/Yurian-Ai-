@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { ConversationsModule } from './conversations/conversations.module';
 import { HealthModule } from './health/health.module';
 import { ProjectsModule } from './projects/projects.module';
+import { TasksModule } from './tasks/tasks.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 
 @Module({
@@ -15,6 +16,7 @@ import { WorkspacesModule } from './workspaces/workspaces.module';
     AuthModule,
     WorkspacesModule,
     ProjectsModule,
+    TasksModule,
     ConversationsModule,
     ApprovalsModule,
     HealthModule,
