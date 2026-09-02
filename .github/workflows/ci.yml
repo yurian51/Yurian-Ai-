@@ -16,7 +16,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -43,8 +43,8 @@ jobs:
     env:
       DATABASE_URL: postgresql://yurian:postgres@localhost:5432/yurian_ai_os
       REDIS_URL: redis://localhost:6379
-      JWT_ACCESS_SECRET: ci-access-secret
-      JWT_REFRESH_SECRET: ci-refresh-secret
+      JWT_ACCESS_SECRET: ci-access-secret-change-me
+      JWT_REFRESH_SECRET: ci-refresh-secret-change-me
       CLAUDE_API_KEY: ci-placeholder-key
       CLAUDE_MODEL: claude-sonnet-4-20250514
       NODE_ENV: test
@@ -63,6 +63,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --no-frozen-lockfile
@@ -82,8 +83,17 @@ jobs:
       - name: Type check
         run: pnpm typecheck
 
+      - name: Lint API
+        run: pnpm --filter @yurian/api lint
+
       - name: Build API
         run: pnpm --filter @yurian/api build
 
       - name: Build Web
         run: pnpm --filter @yurian/web build
+
+      - name: Build production API image
+        run: docker build -f Dockerfile.api -t yurian-ai-os-api:ci .
+
+      - name: Build production Web image
+        run: docker build -f Dockerfile.web -t yurian-ai-os-web:ci .
