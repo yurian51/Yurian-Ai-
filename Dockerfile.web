@@ -1,0 +1,38 @@
+FROM node:22-alpine AS build
+
+WORKDIR /app
+ENV CI=true
+
+RUN corepack enable && corepack prepare pnpm@10.0.0 --activate
+
+COPY package.json pnpm-workspace.yaml ./
+COPY apps/web/package.json apps/web/package.json
+COPY apps/api/package.json apps/api/package.json
+COPY packages/ai/package.json packages/ai/package.json
+COPY packages/database/package.json packages/database/package.json
+COPY packages/security/package.json packages/security/package.json
+
+RUN pnpm install --no-frozen-lockfile
+
+COPY apps/web apps/web
+COPY packages packages
+
+RUN pnpm --filter @yurian/web build
+
+FROM node:22-alpine AS runtime
+
+WORKDIR /app
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+
+RUN addgroup -S yurian && adduser -S yurian -G yurian
+
+COPY --from=build /app/apps/web/.next/standalone ./
+COPY --from=build /app/apps/web/.next/static ./apps/web/.next/static
+COPY --from=build /app/apps/web/public ./apps/web/public
+
+USER yurian
+EXPOSE 3000
+
+CMD ["node", "apps/web/server.js"]
