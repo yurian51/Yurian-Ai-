@@ -17,6 +17,7 @@ FROM node:22-alpine AS runtime
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=4000
+RUN corepack enable && corepack prepare pnpm@10.0.0 --activate
 RUN addgroup -S yurian && adduser -S yurian -G yurian
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/apps/api/dist ./apps/api/dist
