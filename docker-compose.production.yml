@@ -42,6 +42,12 @@ services:
         condition: service_healthy
     expose:
       - "4000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:4000/api/v1/health/ready"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks: [backend, edge]
 
   web:
@@ -54,9 +60,16 @@ services:
       PORT: 3000
       HOSTNAME: 0.0.0.0
     depends_on:
-      - api
+      api:
+        condition: service_healthy
     expose:
       - "3000"
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://127.0.0.1:3000/"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
     networks: [edge]
 
   caddy:
@@ -73,8 +86,10 @@ services:
       - caddy_data:/data
       - caddy_config:/config
     depends_on:
-      - web
-      - api
+      web:
+        condition: service_healthy
+      api:
+        condition: service_healthy
     networks: [edge]
 
 volumes:
