@@ -85,6 +85,9 @@ jobs:
       - name: Lint API
         run: pnpm --filter @yurian/api lint
 
+      - name: Test API
+        run: pnpm --filter @yurian/api test -- --passWithNoTests
+
       - name: Build API
         run: pnpm --filter @yurian/api build
 
