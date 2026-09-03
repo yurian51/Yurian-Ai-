@@ -1,14 +1,16 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { CreateMemoryDto } from './dto/create-memory.dto';
 import { UpdateMemoryDto } from './dto/update-memory.dto';
 import { MemoryService } from './memory.service';
 import type { AuthenticatedPrincipal } from '../auth/auth.types';
+import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('Memory')
 @ApiBearerAuth()
-@Controller('api/v1/memory')
+@UseGuards(AuthGuard)
+@Controller('memory')
 export class MemoryController {
   constructor(private readonly memoryService: MemoryService) {}
 
