@@ -1,13 +1,15 @@
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Req, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { CreateTaskDto } from './dto/create-task.dto';
 import { TasksService } from './tasks.service';
 import type { AuthenticatedPrincipal } from '../auth/auth.types';
+import { AuthGuard } from '../auth/auth.guard';
 
 @ApiTags('Tasks')
 @ApiBearerAuth()
-@Controller('api/v1/workspaces/:workspaceId/tasks')
+@UseGuards(AuthGuard)
+@Controller('workspaces/:workspaceId/tasks')
 export class TasksController {
   constructor(private readonly tasksService: TasksService) {}
 
