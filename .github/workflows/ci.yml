@@ -1,0 +1,101 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'feat/**']
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: yurian
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: yurian_ai_os
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd="pg_isready -U yurian -d yurian_ai_os"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+      redis:
+        image: redis:7-alpine
+        ports: ['6379:6379']
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=12
+
+    env:
+      DATABASE_URL: postgresql://yurian:postgres@localhost:5432/yurian_ai_os
+      REDIS_URL: redis://localhost:6379
+      JWT_ACCESS_SECRET: ci-access-secret-change-me
+      JWT_REFRESH_SECRET: ci-refresh-secret-change-me
+      CLAUDE_API_KEY: ci-placeholder-key
+      CLAUDE_MODEL: claude-sonnet-4-20250514
+      NODE_ENV: test
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Generate Prisma Client
+        run: pnpm --filter @yurian/database generate
+
+      - name: Validate Prisma schema
+        run: pnpm --filter @yurian/database validate
+
+      - name: Check database connectivity
+        run: |
+          pnpm --filter @yurian/database exec prisma db execute --stdin <<'SQL'
+          SELECT 1;
+          SQL
+
+      - name: Type check
+        run: pnpm typecheck
+
+      - name: Lint API
+        run: pnpm --filter @yurian/api lint
+
+      - name: Test API
+        run: pnpm --filter @yurian/api test -- --passWithNoTests
+
+      - name: Build API
+        run: pnpm --filter @yurian/api build
+
+      - name: Build Web
+        run: pnpm --filter @yurian/web build
+
+      - name: Build production API image
+        run: docker build -f Dockerfile.api -t yurian-ai-os-api:ci .
+
+      - name: Build production Web image
+        run: docker build -f Dockerfile.web -t yurian-ai-os-web:ci .
